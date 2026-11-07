@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-pencil-square"></i> Releves</h2>
+
+<div class="card bg-dark border-secondary mb-4">
+    <div class="card-header">Ajouter / Modifier un releve</div>
+    <div class="card-body">
+        <form method="POST" class="row g-3 align-items-end">
+            <div class="col-auto">
+                <label class="form-label">Annee</label>
+                <input type="number" name="year" class="form-control" value="{{ year }}" min="2018" max="2099">
+            </div>
+            <div class="col-auto">
+                <label class="form-label">Mois</label>
+                <select name="month" class="form-select">
+                    {% for m in range(1, 13) %}
+                    <option value="{{ m }}">{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label">Compteur</label>
+                <select name="meter" class="form-select">
+                    {% for key, label in meters.items() %}
+                    <option value="{{ key }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label">Valeur (cumul)</label>
+                <input type="number" name="value" step="0.01" class="form-control" required>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card bg-dark border-secondary">
+    <div class="card-header">Releves {{ year }}</div>
+    <div class="table-responsive">
+        <table class="table table-dark table-striped mb-0">
+            <thead><tr><th>Mois</th>{% for k, l in meters.items() %}<th>{{ l }}</th>{% endfor %}</tr></thead>
+            <tbody>
+                {% set mois = ['Jan','Fev','Mar','Avr','Mai','Juin','Juil','Aout','Sep','Oct','Nov','Dec'] %}
+                {% for m in range(1, 13) %}
+                <tr>
+                    <td>{{ mois[m-1] }}</td>
+                    {% for key in meters %}
+                    <td>{{ by_meter.get(key, {}).get(m, '-') }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

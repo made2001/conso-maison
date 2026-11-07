@@ -1,0 +1,10 @@
+services:
+  conso:
+    build: .
+    container_name: conso-maison
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "5001:5000"

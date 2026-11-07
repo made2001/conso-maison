@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-person-gear"></i> Profil</h2>
+
+<div class="card bg-dark border-secondary" style="max-width: 400px;">
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" value="{{ current_user.email }}" disabled>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Nouveau mot de passe</label>
+                <input type="password" name="new_password" class="form-control" minlength="8" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Confirmer</label>
+                <input type="password" name="confirm_password" class="form-control" minlength="8" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Changer le mot de passe</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

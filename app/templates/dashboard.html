@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-graph-up"></i> Dashboard</h2>
+    <form class="d-flex" method="GET">
+        <select name="year" class="form-select me-2" onchange="this.form.submit()">
+            {% for y in years %}
+            <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header">Consommation mensuelle {{ selected_year }}</div>
+            <div class="card-body"><canvas id="chartMonthly"></canvas></div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header">Electricite jour vs nuit</div>
+            <div class="card-body"><canvas id="chartElec"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header">Comparaison annees (Gaz)</div>
+            <div class="card-body"><canvas id="chartCompareGaz"></canvas></div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header">Comparaison annees (Elec totale)</div>
+            <div class="card-body"><canvas id="chartCompareElec"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<div class="card bg-dark border-secondary mb-4">
+    <div class="card-header">Details {{ selected_year }}</div>
+    <div class="table-responsive">
+        <table class="table table-dark table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Mois</th>
+                    <th>Eau (m3)</th>
+                    <th>Gaz (m3)</th>
+                    <th>Elec Jour</th>
+                    <th>Elec Nuit</th>
+                    <th>Elec Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set mois = ['Jan','Fev','Mar','Avr','Mai','Juin','Juil','Aout','Sep','Oct','Nov','Dec'] %}
+                {% for row in monthly %}
+                <tr>
+                    <td>{{ mois[loop.index0] }}</td>
+                    <td>{{ row.eau if row.eau is not none else '-' }}</td>
+                    <td>{{ row.gaz if row.gaz is not none else '-' }}</td>
+                    <td>{{ row.elec_jour if row.elec_jour is not none else '-' }}</td>
+                    <td>{{ row.elec_nuit if row.elec_nuit is not none else '-' }}</td>
+                    <td class="fw-bold">{{ row.elec_total if row.elec_total is not none else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row">
+    {% for key, label in meters.items() %}
+    <div class="col-md-3">
+        <div class="card bg-dark border-secondary text-center">
+            <div class="card-body">
+                <h6 class="text-muted">{{ label }}</h6>
+                <h3>{{ annual[key] }}</h3>
+                <small class="text-info">Moy: {{ annual[key ~ '_avg'] }} / mois ({{ annual[key ~ '_months'] }} mois)</small>
+                {% if annual.get(key ~ '_cost') %}
+                <br><small class="text-success">{{ annual[key ~ '_cost'] }} EUR</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const MONTHS = ['Jan','Fev','Mar','Avr','Mai','Juin','Juil','Aout','Sep','Oct','Nov','Dec'];
+const COLORS = { eau: '#0dcaf0', gaz: '#fd7e14', elec_jour: '#ffc107', elec_nuit: '#6f42c1' };
+
+fetch('/api/chart/{{ selected_year }}')
+.then(r => r.json())
+.then(data => {
+    new Chart(document.getElementById('chartMonthly'), {
+        type: 'bar',
+        data: { labels: MONTHS, datasets: [
+            { label: 'Eau (m3)', data: data.eau, backgroundColor: COLORS.eau + '99', borderColor: COLORS.eau, borderWidth: 1 },
+            { label: 'Gaz (m3)', data: data.gaz, backgroundColor: COLORS.gaz + '99', borderColor: COLORS.gaz, borderWidth: 1 }
+        ]},
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+    new Chart(document.getElementById('chartElec'), {
+        type: 'bar',
+        data: { labels: MONTHS, datasets: [
+            { label: 'Jour', data: data.elec_jour, backgroundColor: COLORS.elec_jour + '99', borderColor: COLORS.elec_jour, borderWidth: 1 },
+            { label: 'Nuit', data: data.elec_nuit, backgroundColor: COLORS.elec_nuit + '99', borderColor: COLORS.elec_nuit, borderWidth: 1 }
+        ]},
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+});
+
+const YEARS = {{ years | tojson }};
+const yearsSorted = [...YEARS].sort();
+function buildCompareChart(canvasId, meterKey) {
+    const datasets = yearsSorted.map((y, i) => {
+        const hue = (i * 60) % 360;
+        return fetch(`/api/chart/${y}`).then(r => r.json()).then(data => ({
+            label: String(y), data: data[meterKey],
+            borderColor: `hsl(${hue}, 70%, 60%)`, backgroundColor: `hsl(${hue}, 70%, 60%, 0.1)`,
+            tension: 0.3, fill: false
+        }));
+    });
+    Promise.all(datasets).then(resolved => {
+        new Chart(document.getElementById(canvasId), {
+            type: 'line', data: { labels: MONTHS, datasets: resolved },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+    });
+}
+buildCompareChart('chartCompareGaz', 'gaz');
+buildCompareChart('chartCompareElec', 'elec_nuit');
+</script>
+{% endblock %}

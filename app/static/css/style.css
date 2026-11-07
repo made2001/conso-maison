@@ -1,0 +1,14 @@
+body {
+    background-color: #1a1d21;
+}
+.card {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.navbar-brand {
+    font-weight: 700;
+}
+.table th {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}

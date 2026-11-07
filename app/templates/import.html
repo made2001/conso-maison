@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-upload"></i> Import CSV</h2>
+
+<div class="card bg-dark border-secondary">
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label">Fichier CSV (separateur point-virgule)</label>
+                <input type="file" name="file" class="form-control" accept=".csv" required>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-upload"></i> Importer</button>
+        </form>
+    </div>
+</div>
+
+<div class="card bg-dark border-secondary mt-4">
+    <div class="card-header">Format attendu</div>
+    <div class="card-body">
+        <pre class="text-info">annee;mois;compteur;valeur
+2024;1;eau;1588.97
+2024;1;gaz;1544.4
+2024;1;elec_jour;2304.5
+2024;1;elec_nuit;3282.8</pre>
+        <p class="text-muted mt-2">Compteurs : <code>eau</code>, <code>gaz</code>, <code>elec_jour</code>, <code>elec_nuit</code></p>
+    </div>
+</div>
+{% endblock %}
+
