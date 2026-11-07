@@ -8,3 +8,16 @@ services:
       - ./data:/app/data
     ports:
       - "5001:5000"
+
+  backup:
+    build:
+      context: .
+      dockerfile: Dockerfile.backup
+    container_name: conso-backup
+    restart: unless-stopped
+    volumes:
+      - ./data:/data:ro
+      - /volume1/Datas/backup-conso:/backups
+      - ./backup.sh:/backup.sh:ro
+    entrypoint: sh
+    command: -c "echo '0 11 * * * /backup.sh' | crontab - && crond -f"
