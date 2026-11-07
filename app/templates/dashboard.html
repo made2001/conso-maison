@@ -26,13 +26,57 @@
     </div>
 </div>
 
+<div class="card bg-dark border-secondary mb-4">
+    <div class="card-body py-2">
+        <div class="d-flex align-items-center flex-wrap gap-3">
+            <span class="text-muted me-2"><i class="bi bi-funnel"></i> Annees affichees :</span>
+            <div class="d-flex flex-wrap gap-3" id="yearFilters">
+                {% for y in years %}
+                <div class="form-check">
+                    <input class="form-check-input year-filter" type="checkbox"
+                           value="{{ y }}" id="yf-{{ y }}"
+                           {% if loop.index <= 4 %}checked{% endif %}>
+                    <label class="form-check-label" for="yf-{{ y }}">{{ y }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <button class="btn btn-sm btn-outline-secondary" id="selAll">Tout</button>
+            <button class="btn btn-sm btn-outline-secondary" id="selNone">Aucun</button>
+        </div>
+    </div>
+</div>
+
 <div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header">Comparaison annees (Eau)</div>
+            <div class="card-body"><canvas id="chartCompareEau"></canvas></div>
+        </div>
+    </div>
     <div class="col-md-6">
         <div class="card bg-dark border-secondary">
             <div class="card-header">Comparaison annees (Gaz)</div>
             <div class="card-body"><canvas id="chartCompareGaz"></canvas></div>
         </div>
     </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header">Comparaison annees (Elec jour)</div>
+            <div class="card-body"><canvas id="chartCompareElecJour"></canvas></div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header">Comparaison annees (Elec nuit)</div>
+            <div class="card-body"><canvas id="chartCompareElecNuit"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
     <div class="col-md-6">
         <div class="card bg-dark border-secondary">
             <div class="card-header">Comparaison annees (Elec totale)</div>
@@ -94,6 +138,62 @@
 <script>
 const MONTHS = ['Jan','Fev','Mar','Avr','Mai','Juin','Juil','Aout','Sep','Oct','Nov','Dec'];
 const COLORS = { eau: '#0dcaf0', gaz: '#fd7e14', elec_jour: '#ffc107', elec_nuit: '#6f42c1' };
+const YEARS = {{ years | tojson }};
+const yearsSorted = [...YEARS].sort();
+const yearData = {};
+const chartInstances = {};
+
+function colorFor(y, i) {
+    const hue = (yearsSorted.indexOf(y) * 47) % 360;
+    return `hsl(${hue}, 70%, 60%)`;
+}
+
+function checkedYears() {
+    return [...document.querySelectorAll('.year-filter:checked')].map(c => parseInt(c.value));
+}
+
+function renderCompare(canvasId, meterKey) {
+    const sel = checkedYears();
+    if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+    const datasets = sel.map((y, i) => ({
+        label: String(y),
+        data: (yearData[y] || {})[meterKey] || [],
+        borderColor: colorFor(y, i),
+        backgroundColor: colorFor(y, i).replace(')', ', 0.1)').replace('hsl', 'hsla'),
+        tension: 0.3, fill: false
+    }));
+    chartInstances[canvasId] = new Chart(document.getElementById(canvasId), {
+        type: 'line',
+        data: { labels: MONTHS, datasets: datasets },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+}
+
+function renderAllCompare() {
+    renderCompare('chartCompareEau', 'eau');
+    renderCompare('chartCompareGaz', 'gaz');
+    renderCompare('chartCompareElecJour', 'elec_jour');
+    renderCompare('chartCompareElecNuit', 'elec_nuit');
+    renderCompare('chartCompareElec', 'elec_nuit');
+}
+
+Promise.all(yearsSorted.map(y =>
+    fetch(`/api/chart/${y}`).then(r => r.json()).then(d => { yearData[y] = d; })
+)).then(() => {
+    renderAllCompare();
+});
+
+document.querySelectorAll('.year-filter').forEach(cb =>
+    cb.addEventListener('change', renderAllCompare));
+
+document.getElementById('selAll').addEventListener('click', () => {
+    document.querySelectorAll('.year-filter').forEach(cb => cb.checked = true);
+    renderAllCompare();
+});
+document.getElementById('selNone').addEventListener('click', () => {
+    document.querySelectorAll('.year-filter').forEach(cb => cb.checked = false);
+    renderAllCompare();
+});
 
 fetch('/api/chart/{{ selected_year }}')
 .then(r => r.json())
@@ -115,26 +215,5 @@ fetch('/api/chart/{{ selected_year }}')
         options: { responsive: true, scales: { y: { beginAtZero: true } } }
     });
 });
-
-const YEARS = {{ years | tojson }};
-const yearsSorted = [...YEARS].sort();
-function buildCompareChart(canvasId, meterKey) {
-    const datasets = yearsSorted.map((y, i) => {
-        const hue = (i * 60) % 360;
-        return fetch(`/api/chart/${y}`).then(r => r.json()).then(data => ({
-            label: String(y), data: data[meterKey],
-            borderColor: `hsl(${hue}, 70%, 60%)`, backgroundColor: `hsl(${hue}, 70%, 60%, 0.1)`,
-            tension: 0.3, fill: false
-        }));
-    });
-    Promise.all(datasets).then(resolved => {
-        new Chart(document.getElementById(canvasId), {
-            type: 'line', data: { labels: MONTHS, datasets: resolved },
-            options: { responsive: true, scales: { y: { beginAtZero: true } } }
-        });
-    });
-}
-buildCompareChart('chartCompareGaz', 'gaz');
-buildCompareChart('chartCompareElec', 'elec_nuit');
 </script>
 {% endblock %}

@@ -14,8 +14,11 @@ def create_app():
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-key-change-me")
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////app/data/conso.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     db.init_app(app)
+
     login_manager.init_app(app)
 
     from app.auth import auth_bp

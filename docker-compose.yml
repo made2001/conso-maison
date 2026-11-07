@@ -6,8 +6,9 @@ services:
     env_file: .env
     volumes:
       - ./data:/app/data
-    ports:
-      - "5001:5000"
+    networks:
+      - npm-sqllite_default
+      - default
 
   backup:
     build:
@@ -20,4 +21,8 @@ services:
       - /volume1/Datas/backup-conso:/backups
       - ./backup.sh:/backup.sh:ro
     entrypoint: sh
-    command: -c "echo '0 11 * * * /backup.sh' | crontab - && crond -f"
+    command: -c "echo '0 3 * * * /backup.sh' | crontab - && crond -f"
+
+networks:
+  npm-sqllite_default:
+    external: true
