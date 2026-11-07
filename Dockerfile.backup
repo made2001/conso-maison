@@ -1,3 +1,2 @@
 FROM alpine:3.19
-RUN apk add --no-cache sqlite && adduser -D -u 10001 backuper
-USER backuper
+RUN apk add --no-cache sqlite
