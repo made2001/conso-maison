@@ -61,6 +61,18 @@ def dashboard():
         if meter_key in cost_map and total:
             annual[f"{meter_key}_cost"] = round(total * cost_map[meter_key].unit_price, 2)
 
+    latest = {}
+    latest_period = ""
+    for meter_key in METERS:
+        r = MeterReading.query.filter_by(meter=meter_key).order_by(
+            MeterReading.year.desc(), MeterReading.month.desc()
+        ).first()
+        if r:
+            latest[meter_key] = r.value
+            p = f"{r.year}-{r.month:02d}"
+            if p > latest_period:
+                latest_period = p
+
     return render_template(
         "dashboard.html",
         years=years,
@@ -69,6 +81,8 @@ def dashboard():
         meters=METERS,
         annual=annual,
         cost_map=cost_map,
+        latest=latest,
+        latest_period=latest_period,
     )
 
 

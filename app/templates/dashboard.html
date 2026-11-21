@@ -9,6 +9,20 @@
             {% endfor %}
         </select>
     </form>
+
+<div class="row mb-4">
+    {% for key, label in meters.items() %}
+    <div class="col-6 col-md-3">
+        <div class="card bg-dark border-primary text-center">
+            <div class="card-body py-2">
+                <h6 class="text-muted mb-1">{{ label }} - relevé</h6>
+                <h3 class="mb-0">{{ latest.get(key, '-') }}</h3>
+                {% if latest_period %}<small class="text-secondary">au {{ latest_period }}</small>{% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
 </div>
 
 <div class="row mb-4">
