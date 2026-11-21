@@ -6,6 +6,8 @@ services:
     env_file: .env
     volumes:
       - ./data:/app/data
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
     networks:
       - npm-sqllite_default
       - default
@@ -16,6 +18,8 @@ services:
       dockerfile: Dockerfile.backup
     container_name: conso-backup
     restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
     volumes:
       - ./data:/data:ro
       - /volume1/Datas/backup-conso:/backups
