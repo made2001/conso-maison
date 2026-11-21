@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -14,11 +15,13 @@ def create_app():
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-key-change-me")
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////app/data/conso.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
     app.config["SESSION_COOKIE_SECURE"] = True
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-    db.init_app(app)
+    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=12)
 
+    db.init_app(app)
     login_manager.init_app(app)
 
     from app.auth import auth_bp
@@ -45,5 +48,3 @@ def _ensure_admin(app):
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-
-
